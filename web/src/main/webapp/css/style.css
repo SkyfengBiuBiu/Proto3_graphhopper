@@ -11,6 +11,24 @@ body {
     cursor: default;
 }
 
+#newinstruction{
+	float: right;
+	margin-right: 10px;
+	width: 270px
+}
+
+#getLocation{
+	float: left;
+	margin-left: 5px;
+	margin-top: 5px;
+}
+
+#getnextLocation{
+	float: left;
+	margin-left: 5px;
+	margin-top: 5px;
+}
+
 #input {
     float: left;
     margin-left: 10px;
@@ -21,6 +39,8 @@ body {
     margin-top: 10px;
     display: none;
     padding: 5px;
+    font-size:26px;
+   
 }
 
 #info a {

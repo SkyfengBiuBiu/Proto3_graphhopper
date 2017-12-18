@@ -40,8 +40,25 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.StringWriter;
 import java.util.*;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.util.Collection;
+import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.annotation.MultipartConfig;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
 
 import static com.graphhopper.util.Parameters.DETAILS.PATH_DETAILS;
 import static com.graphhopper.util.Parameters.Routing.*;
@@ -55,6 +72,7 @@ import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
  *
  * @author Peter Karich
  */
+@MultipartConfig
 public class GraphHopperServlet extends GHBaseServlet {
 
     @Inject
@@ -67,8 +85,104 @@ public class GraphHopperServlet extends GHBaseServlet {
     @Named("hasElevation")
     private boolean hasElevation;
 
+    public String uploadedFileLocation;
+	public String returnMessage="Error File";
+	
     @Override
+    public void doPost(HttpServletRequest httpReq, HttpServletResponse httpRes) throws ServletException, IOException {
+   /* 	Part f= httpReq.getPart("file");
+    	//String filePath = getServletContext().getRealPath("/img");
+    	String fileName = f.getSubmittedFileName();
+    	 String uploadedFileLocation = "./web/src/main/webapp/" + fileName;
+    	 
+    	 StringBuffer xmlResult = new StringBuffer();
+   	  xmlResult.append("<root>");
+   	  xmlResult.append("<yesNum>" +fileName + "</yesNum>");
+   	  xmlResult.append("</root>");
+   	  httpRes.getWriter().write(xmlResult.toString());
+   	  //return the fileName to main.js
+*/   
+    	  Part f = httpReq.getPart("file");
+          // String filePath = getServletContext().getRealPath("/img");
+       
+
+          returnMessage=processFile(f);
+          StringBuffer xmlResult = new StringBuffer();
+          xmlResult.append("<root>");
+          xmlResult.append("<yesNum>" + returnMessage + "</yesNum>");
+          xmlResult.append("</root>");
+          httpRes.getWriter().write(xmlResult.toString());
+          // return the fileName to main.js
+
+    
+
+      }
+    
+    private String processFile(Part part) throws IOException{
+    	if(part == null){  
+            return returnMessage="1";  
+        }  
+
+        String headerfNValue = part.getHeader("content-disposition");  
+        if("".equals(headerfNValue.trim())){  
+            return returnMessage;  
+        }  
+
+        //headerfNValue = [filename="xxxx.xxx"]  
+        String valueKey = "filename=\"";  
+        int s = headerfNValue.indexOf(valueKey);  
+        if(s < 0){  
+            return returnMessage="2";  
+        }  
+
+        String originalfilename = headerfNValue.substring(s + valueKey.length(), headerfNValue.length()-1);  
+;  
+        String suffix =  originalfilename.substring(originalfilename.lastIndexOf("."));  
+        if(".csv".indexOf(suffix) < 0){  
+             return returnMessage;  
+        }  
+        String fullName = part.getSubmittedFileName();
+        String fName = fullName.trim();
+
+        String temp[] = fName.split("\\\\");
+        String fileName = temp[temp.length - 1];
+        String uploadedFileLocation = "./web/src/main/webapp/" + fileName;
+
+        System.out.println(fileName);
+        System.out.println(uploadedFileLocation);
+        
+        InputStream is= part.getInputStream();
+        writeToFile(is,uploadedFileLocation);
+        
+        returnMessage=fileName;
+        return returnMessage;
+    }
+    
+    private void writeToFile(InputStream uploadedInputStream,
+            String uploadedFileLocation) {
+
+            try {
+                OutputStream out = new FileOutputStream(new File(
+                        uploadedFileLocation));
+                int read = 0;
+                byte[] bytes = new byte[1024];
+
+                out = new FileOutputStream(new File(uploadedFileLocation));
+                while ((read = uploadedInputStream.read(bytes)) != -1) {
+                    out.write(bytes, 0, read);
+                }
+                out.flush();
+                out.close();
+            } catch (IOException e) {
+
+                e.printStackTrace();
+            }
+
+        }
+    
     public void doGet(HttpServletRequest httpReq, HttpServletResponse httpRes) throws ServletException, IOException {
+    	// Create path components to save the file
+    	
         List<GHPoint> requestPoints = getPoints(httpReq, "point");
         GHResponse ghRsp = new GHResponse();
 
@@ -83,6 +197,7 @@ public class GraphHopperServlet extends GHBaseServlet {
         String weighting = getParam(httpReq, "weighting", "fastest");
         String algoStr = getParam(httpReq, "algorithm", "");
         String localeStr = getParam(httpReq, "locale", "en");
+        
 
         StopWatch sw = new StopWatch().start();
 

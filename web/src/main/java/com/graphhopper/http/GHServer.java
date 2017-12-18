@@ -39,6 +39,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.DispatcherType;
+import javax.servlet.MultipartConfigElement;
+
 import java.util.EnumSet;
 
 /**
@@ -98,10 +100,16 @@ public class GHServer {
         String host = args.get("jetty.host", "");
         connector0.setPort(httpPort);
 
+        ServletHolder sh = new ServletHolder(GraphHopperServlet.class);
+        sh.getRegistration().setMultipartConfig(new MultipartConfigElement("", 1048576, 1048576, 262144));
+        servHandler.addServlet(sh,"/route");
+        
         int requestHeaderSize = args.getInt("jetty.request_header_size", -1);
         if (requestHeaderSize > 0)
             connector0.getConnectionFactory(HttpConnectionFactory.class).getHttpConfiguration().setRequestHeaderSize(requestHeaderSize);
 
+        
+        
         if (!host.isEmpty())
             connector0.setHost(host);
 

@@ -186,6 +186,7 @@ GHRequest.prototype.createPointParams = function (useRawInput) {
         if (i > 0)
             str += "&";
         if (typeof point.input == 'undefined')
+        	
             str += "point=";
         else if (useRawInput)
             str += "point=" + encodeURIComponent(point.input);
@@ -210,9 +211,9 @@ GHRequest.prototype.flatParameter = function (key, val) {
 
     if(GHRoute.isObject(val)) {
         var url = "";
-        var arr = Object.keys(val);
+        var arr = Object.keys(val);		
         for (var keyIndex in arr) {
-           var objKey = arr[keyIndex];
+        	var objKey = arr[keyIndex];
            url += this.flatParameter(key + "." + objKey, val[objKey]);
         }
         return url;
